@@ -1,0 +1,41 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Meridian Cinema",
+      "hasCanvas": true,
+      "bodyTextLen": 96,
+      "bodyTextHash": "a8ef64960a4f17198846a76e88a67a045539451d1e58dd5495732df285dfa097",
+      "bodyTextPrefix": "Meridian Pipeline Reef Pause Feed Fullscreen Eco Balanced Detail",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Meridian Cinema",
+      "hasCanvas": true,
+      "bodyTextLen": 96,
+      "bodyTextHash": "a8ef64960a4f17198846a76e88a67a045539451d1e58dd5495732df285dfa097",
+      "bodyTextPrefix": "Meridian Pipeline Reef Pause Feed Fullscreen Eco Balanced Detail",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": true,
+  "baselineReasons": [
+    "desktop: body text collapsed (223 -> 96 chars)",
+    "mobile: body text collapsed (223 -> 96 chars)"
+  ]
+}

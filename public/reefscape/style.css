@@ -1,0 +1,69 @@
+@import url("../../ui/scene.css");
+
+/* This build is the reef only — shared habitat tokens are freshwater green. */
+:root {
+  --background: #04101d;
+  --surface: #0c1c2c;
+  --surface-hover: #163044;
+  --text: #e7f4ff;
+  --text-muted: #9fd3ea;
+  --border: #2c536b;
+  --focus: #b7e4ff;
+  --scrim: #04101dcc;
+}
+
+form.watch {
+  top: calc(var(--space-6) + var(--control-height) + var(--space-2));
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: min(720px, calc(100% - var(--space-8)));
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-1);
+  background: var(--scrim);
+  padding: var(--space-1);
+}
+.watch-modes,
+.watch-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
+.watch-modes label {
+  min-height: var(--control-height);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  cursor: pointer;
+}
+.watch-modes label:has(input:checked) { background: var(--surface-hover); }
+.watch-row input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+form.watch button[type="submit"] { background: var(--surface); }
+form.watch button[type="submit"]:hover { background: var(--surface-hover); }
+#watch-status {
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-1);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+#watch-status[data-state="error"] { color: var(--text); }
+.watch-picks { display: flex; flex-direction: column; max-height: 220px; overflow: auto; }
+.watch-picks button { width: 100%; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.watch input:disabled,
+.watch select:disabled { opacity: 0.45; }
+@media (max-width: 600px) {
+  form.watch {
+    top: calc(var(--space-3) + var(--control-height) + var(--space-2));
+    width: calc(100% - var(--space-4));
+  }
+  #watch-q { flex-basis: 100%; }
+}
