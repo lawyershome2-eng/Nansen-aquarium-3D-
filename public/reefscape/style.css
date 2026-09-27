@@ -67,3 +67,6 @@ form.watch button[type="submit"]:hover { background: var(--surface-hover); }
   }
   #watch-q { flex-basis: 100%; }
 }
+
+#scene { touch-action: none; cursor: grab; }
+#scene:active { cursor: grabbing; }

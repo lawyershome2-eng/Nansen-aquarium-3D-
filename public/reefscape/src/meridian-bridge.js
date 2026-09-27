@@ -25,6 +25,7 @@ import * as THREE from 'three';
 import { makeFishGeometry, fishMaterial } from './fish-model.js';
 import { Simulation, STRIDE } from '../../src/simulation.js';
 import { connect } from '../../src/stream.js';
+import { createNameplates } from './nameplates.js';
 
 const POOL = { chromis: 48, anthias: 32 }; // species 0/1 -> chromis, 2/3 -> anthias
 const KIND_FOR_SPECIES = ['chromis', 'chromis', 'anthias', 'anthias'];
@@ -69,7 +70,7 @@ function makePool(scene, kind, size) {
   return { kind, size, mesh, trimData, gait: gaitData, trim, gaitAttr: gait, slots: new Array(size).fill(null) };
 }
 
-export function createMeridianBridge(scene, { chains } = {}) {
+export function createMeridianBridge(scene, camera) {
   const sim = new Simulation({ bounds: { x: 22, y: 7, z: 11 }, ambientCount: 0, maxEventEntities: POOL.chromis + POOL.anthias });
   const subs = new Set();
   let status = { mode: 'mock', state: 'connecting' };
@@ -102,6 +103,7 @@ export function createMeridianBridge(scene, { chains } = {}) {
   listen('/api/stream');
 
   const pools = { chromis: makePool(scene, 'chromis', POOL.chromis), anthias: makePool(scene, 'anthias', POOL.anthias) };
+  const plates = createNameplates(scene);
   const dummy = new THREE.Object3D();
   const euler = new THREE.Euler(0, 0, 0, 'YZX');
   const pos3 = [0, 0, 0];
@@ -129,6 +131,7 @@ export function createMeridianBridge(scene, { chains } = {}) {
       buf = r.buffer;
 
       const liveIds = { chromis: new Set(), anthias: new Set() };
+      plates.begin();
       for (let i = 0; i < r.count; i++) {
         const o = i * STRIDE;
         const kind = KIND_FOR_SPECIES[buf[o + 7]];
@@ -156,6 +159,7 @@ export function createMeridianBridge(scene, { chains } = {}) {
         dummy.quaternion.setFromEuler(euler);
         dummy.updateMatrix();
         pool.mesh.setMatrixAt(slot, dummy.matrix);
+        if (camera && alpha > 0.08) plates.stick(pos3[0], pos3[1], pos3[2], scale, alpha, sim.entities[i].event, camera);
 
         const wave = Math.min(1, speed / (buf[o + 6] * 1.4 + 0.5));
         const tailAmplitude = AMPLITUDE[kind] * wave;
@@ -163,6 +167,7 @@ export function createMeridianBridge(scene, { chains } = {}) {
         pool.trimData.set([phase, tailAmplitude, trimVariant, 0], slot * 4);
         pool.gait.set([phase * 0.5, 1, 0, 0], slot * 4); // pectoral, rowing, bend(=0, see file header), unused
       }
+      plates.end();
 
       for (const kind of ['chromis', 'anthias']) {
         const pool = pools[kind];

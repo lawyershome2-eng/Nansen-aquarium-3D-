@@ -8,6 +8,7 @@ import { createAnemone } from './anemone.js';
 import { createFishSchool } from './fish-model.js';
 import { createMeridianBridge } from './meridian-bridge.js';
 import { installWatchBar } from '../../src/watch-ui.js';
+import { installPoolOrbit } from './pool-orbit.js';
 import { createShrimp } from './shrimp.js';
 import { createParticles } from './particles.js';
 import { ReefSimulation, FIXED_STEP } from './simulation.js';
@@ -103,7 +104,7 @@ async function start(){
   rockPrepass.add(new THREE.Mesh(rockSurface.geometry,rockDepthMaterial));
   const simulation=new ReefSimulation();
   const fishSchool=createFishSchool(scene,simulation);
-  const meridian=createMeridianBridge(scene);
+  const meridian=createMeridianBridge(scene, camera);
   window.Meridian=Object.assign(window.Meridian||{},{camera,sim:meridian.sim});
   const shrimp=createShrimp(scene,simulation),particles=createParticles(scene,simulation,shadow);
   function sync(dt){
@@ -158,6 +159,7 @@ async function start(){
   }
   changeRate=restart;
   changePower=()=>{resize();restart();};
+  const orbit=installPoolOrbit(camera,canvas,{onChange:syncPostCamera});
   function resize(draw=true){
     const width=habitat.clientWidth,height=habitat.clientHeight,preset=presets[quality];
     const wasZeroSize=zeroSize;
@@ -167,10 +169,11 @@ async function start(){
     ratio=renderScale(quality,devicePixelRatio,onBattery)*autoScale;
     const {width:w,height:h}=framebufferSize(width,height,ratio,renderer.capabilities.maxTextureSize,preset.pixels);ratio=w/width;renderer.setSize(w,h,false);target.setSize(w,h);post.uniforms.size.value.set(w,h);post.uniforms.aoRadiusScale.value=h/972;
     camera.aspect=width/height;
-    if(view==='wide'){
+    if(view==='wide'&&!orbit.aimed){
       const focus=-3.1*Math.min(1,Math.max(0,(1.3-camera.aspect)/.65));
       camera.position.set(views.wide.position[0]+focus,views.wide.position[1],views.wide.position[2]);
       camera.lookAt(views.wide.target[0]+focus,views.wide.target[1],views.wide.target[2]);
+      orbit.setTarget(views.wide.target[0]+focus,views.wide.target[1],views.wide.target[2]);
     }
     // Keep the central host in portrait; wide screens get the two tank islands.
     camera.fov=views[view].fov+(view==='wide'&&camera.aspect<1.3?Math.min(15,(1.3-camera.aspect)*22):0);
@@ -185,13 +188,18 @@ async function start(){
   const plane=new THREE.Plane(new THREE.Vector3(0,0,1),-2.4);
   function project(event){const bounds=canvas.getBoundingClientRect();ndc.set((event.clientX-bounds.left)/bounds.width*2-1,-(event.clientY-bounds.top)/bounds.height*2+1);raycaster.setFromCamera(ndc,camera);return raycaster.ray.intersectPlane(plane,point);}
   canvas.addEventListener('pointermove',event=>{
+    if(orbit.dragging||event.buttons)return;
     if(!running()||!project(event))return;const now=performance.now();
     const speed=pointer?point.distanceTo(lastPoint)/Math.max(.016,(now-lastPointer)/1000):0;
     if(!pointer)pointer={position:new THREE.Vector3(),speed:0};
     pointer.position.copy(point);pointer.speed=Math.min(15,speed);lastPoint.copy(point);lastPointer=now;
   },{passive:true});
   canvas.addEventListener('pointerleave',()=>{pointer=null;});
-  canvas.addEventListener('pointerdown',event=>{if(event.button!==0||!running()||!project(event))return;simulation.feed(point.x,1);});
+  canvas.addEventListener('pool-tap',event=>{
+    const src=event.detail;
+    if(!running()||!src||!project(src))return;
+    simulation.feed(point.x,1);
+  });
   feed=()=>{if(running())simulation.feed(-2.6+Math.sin(simulation.time*.73)*1.7,1.3);};
   updateControls=installControls({habitat,isPaused:()=>paused,isRunning:running,
     pause:window.habitatPause,feed,quality:()=>quality,
@@ -224,7 +232,7 @@ async function start(){
   window.reef={
     ready:true,diagnostics:()=>({...simulation.diagnostics(),frames,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
       pixels:[canvas.width,canvas.height],quality,effectiveFPS:running()?fps():0,renderScale:ratio,cpuFrameEMA:cpuEMA,scheduled:loop.state.pending,paused,hostRate,hidden:document.hidden,contextLost,tentacles:anemone.tentacles.count,webgl:renderer.capabilities.isWebGL2?'WebGL2':'WebGL2',renderer:renderer.getContext().getParameter(renderer.getContext().RENDERER)}),
-    setView(name){if(!views[name])throw new RangeError('Unknown reef camera');applyView(name);resize();},
+    setView(name){if(!views[name])throw new RangeError('Unknown reef camera');applyView(name);orbit.relinquish();orbit.setTarget(...views[name].target);resize();},
     pause(value=true){paused=Boolean(value);restart();},
     advance(seconds){if(!paused)throw new Error('Pause before advancing deterministic capture time.');if(!Number.isFinite(seconds)||seconds<0||seconds>120)throw new RangeError('Advance must be 0–120 seconds.');for(let i=0;i<Math.round(seconds/FIXED_STEP);i++)simulation.step(FIXED_STEP);sync(seconds);render();},
     feed:()=>feed(),
