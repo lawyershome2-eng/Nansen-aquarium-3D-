@@ -67,7 +67,7 @@ function makePool(scene, kind, size) {
   hideMatrix.setPosition(0, HIDE_Y, 0);
   for (let i = 0; i < size; i++) mesh.setMatrixAt(i, hideMatrix);
   mesh.instanceMatrix.needsUpdate = true;
-  return { kind, size, mesh, trimData, gait: gaitData, trim, gaitAttr: gait, slots: new Array(size).fill(null) };
+  return { kind, size, mesh, trimData, gait: gaitData, trim, gaitAttr: gait, slots: new Array(size).fill(null), yaw: new Float32Array(size) };
 }
 
 export function createMeridianBridge(scene, camera) {
@@ -150,10 +150,16 @@ export function createMeridianBridge(scene, camera) {
         const scale = (buf[o + 6] / 5) * 0.28; // sim scale ~0.8..4.8 -> reef fish size units
         const alpha = buf[o + 8];
         const phase = buf[o + 10];
+        pos3[1] += Math.sin(phase * 0.85) * Math.min(0.12, scale * 0.55);
 
         dummy.position.set(pos3[0], pos3[1], pos3[2]);
         dummy.scale.setScalar(alpha > 0.02 ? Math.max(scale, 0.001) : 0);
         const yaw = Math.atan2(-vz, vx || 1e-6);
+        let turn = yaw - pool.yaw[slot];
+        if (turn > Math.PI) turn -= Math.PI * 2;
+        if (turn < -Math.PI) turn += Math.PI * 2;
+        pool.yaw[slot] = yaw;
+        const bend = Math.max(-0.55, Math.min(0.55, turn * 6));
         const pitch = Math.max(-0.6, Math.min(0.6, Math.atan2(vy, Math.hypot(vx, vz) || 1e-6)));
         euler.set(0, yaw, pitch);
         dummy.quaternion.setFromEuler(euler);
@@ -165,7 +171,7 @@ export function createMeridianBridge(scene, camera) {
         const tailAmplitude = AMPLITUDE[kind] * wave;
         const trimVariant = (slot * 0.6180339887 + 0.31) % 1; // same golden-ratio spread the reef uses
         pool.trimData.set([phase, tailAmplitude, trimVariant, 0], slot * 4);
-        pool.gait.set([phase * 0.5, 1, 0, 0], slot * 4); // pectoral, rowing, bend(=0, see file header), unused
+        pool.gait.set([phase * 0.5, 1, bend, 0], slot * 4);
       }
       plates.end();
 

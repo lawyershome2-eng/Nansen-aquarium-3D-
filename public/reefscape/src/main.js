@@ -107,10 +107,10 @@ async function start(){
   const meridian=createMeridianBridge(scene, camera);
   window.Meridian=Object.assign(window.Meridian||{},{camera,sim:meridian.sim});
   const shrimp=createShrimp(scene,simulation),particles=createParticles(scene,simulation,shadow);
-  function sync(dt){
+  function sync(dt,swimDt){
     waterTime.value=simulation.time;
     fishSchool.update();
-    meridian.update(dt);
+    meridian.update(swimDt==null?dt:swimDt);
     shrimp.update();particles.update(dt);
   }
   let loop=null,accumulator=0,frames=0,zeroSize=false;
@@ -142,7 +142,7 @@ async function start(){
     while(accumulator>=FIXED_STEP&&steps<6){simulation.step(FIXED_STEP,pointer);accumulator-=FIXED_STEP;steps++;}
     if(steps===6)accumulator=0;
     if(pointer){pointer.speed*=Math.exp(-elapsed*8);}
-    sync(steps*FIXED_STEP);render();
+    sync(steps*FIXED_STEP,Math.min(0.05,Math.max(0,elapsed)));render();
     const cost=performance.now()-before;cpuEMA=cpuEMA?cpuEMA*.96+cost*.04:cost;
     // Conservative one-way downshift, never an oscillating up/down resolution loop.
     // CPU render time is only a pressure signal, not a claimed hardware GPU measurement.

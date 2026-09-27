@@ -22,8 +22,7 @@ export function installPoolOrbit(camera, dom, { onChange } = {}) {
   }
 
   function apply() {
-    spherical.phi = Math.max(0.42, Math.min(1.55, spherical.phi));
-    spherical.radius = Math.max(7.5, Math.min(28, spherical.radius));
+    spherical.radius = Math.max(6.5, Math.min(32, spherical.radius));
     spherical.makeSafe();
     offset.setFromSpherical(spherical);
     camera.position.copy(pivot).add(offset);
@@ -43,6 +42,7 @@ export function installPoolOrbit(camera, dom, { onChange } = {}) {
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, moved: 0 });
     pinch = span();
     try { dom.setPointerCapture(event.pointerId); } catch { /* synthetic events */ }
+    if (event.pointerType !== 'mouse') event.preventDefault();
   }
 
   function move(event) {
@@ -67,11 +67,14 @@ export function installPoolOrbit(camera, dom, { onChange } = {}) {
       return;
     }
 
-    if (prev.moved < 6) return;
+    if (prev.moved < 2) return;
     const height = dom.clientHeight || 1;
-    // Same sign as OrbitControls: drag follows the finger.
-    spherical.theta -= TAU * dx / height * 0.85;
-    spherical.phi -= TAU * dy / height * 0.85;
+    const width = dom.clientWidth || 1;
+    // A short swipe should turn the tank. Vertical room is wide on purpose:
+    // the opening view already sits near the old clamp, so a tight limit felt stuck.
+    spherical.theta -= TAU * dx / width * 1.35;
+    spherical.phi -= TAU * dy / height * 1.15;
+    spherical.phi = Math.max(0.28, Math.min(1.72, spherical.phi));
     aimed = true;
     dragging = true;
     apply();
@@ -87,6 +90,7 @@ export function installPoolOrbit(camera, dom, { onChange } = {}) {
     if (tap) dom.dispatchEvent(new CustomEvent('pool-tap', { detail: event }));
   }
 
+  dom.style.touchAction = 'none';
   dom.addEventListener('pointerdown', down);
   dom.addEventListener('pointermove', move, { passive: false });
   dom.addEventListener('pointerup', up);

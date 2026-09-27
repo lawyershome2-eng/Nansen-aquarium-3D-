@@ -55,7 +55,7 @@ function makePlate() {
     map,
     transparent: true,
     depthWrite: false,
-    depthTest: true,
+    depthTest: false,
     sizeAttenuation: true,
   });
   const sprite = new THREE.Sprite(material);
@@ -99,9 +99,9 @@ export function createNameplates(scene) {
       ahead.set(camera.position.x - x, camera.position.y - y, camera.position.z - z);
       const len = ahead.length() || 1;
       // A few centimetres toward the glass, so the body does not swallow the type.
-      const nudge = 0.05 + fishScale * 0.45;
-      sprite.position.set(x + (ahead.x / len) * nudge, y, z + (ahead.z / len) * nudge);
-      const width = Math.max(0.78, fishScale * 5);
+      const nudge = 0.08 + fishScale * 0.2;
+      sprite.position.set(x + (ahead.x / len) * nudge, y + fishScale * 0.15, z + (ahead.z / len) * nudge);
+      const width = Math.max(1.15, fishScale * 6.5);
       sprite.scale.set(width, width * (H / W), 1);
       sprite.material.opacity = Math.min(1, alpha);
       sprite.visible = true;
